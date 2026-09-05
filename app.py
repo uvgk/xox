@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Xox Sniper Mobile Web App — Cloud Proxy Edition
+Xox Sniper Mobile Web App — Non-Blocking Startup Edition
 """
 
 import os
@@ -112,6 +112,8 @@ class ProxyManager:
         self.proxies: List[str] = []
         self.valid_proxies: List[str] = []
         self.load_proxies_file()
+        # Non-blocking assignment on startup
+        self.valid_proxies = list(self.proxies)
 
     def load_proxies_file(self):
         if not os.path.exists("proxies.txt"):
@@ -130,28 +132,12 @@ class ProxyManager:
                     raw.append(line)
         self.proxies = raw
 
-    def validate_single_proxy(self, p):
-        try:
-            r = requests.get("https://httpbin.org/ip", proxies={"http": p, "https": p}, timeout=2.0)
-            if r.status_code == 200:
-                self.valid_proxies.append(p)
-        except:
-            pass
-
-    def validate_all(self):
-        self.load_proxies_file()
-        self.valid_proxies = []
-        for p in self.proxies:
-            self.validate_single_proxy(p)
-        return len(self.valid_proxies), len(self.proxies)
-
     def get_proxy(self, use_proxies_flag: bool) -> str | None:
         if not use_proxies_flag or not self.valid_proxies:
             return None
         return random.choice(self.valid_proxies)
 
 proxy_engine = ProxyManager()
-# proxy_engine.validate_all() removed to prevent startup timeout
 
 class ResponseAnalyzer:
     @classmethod
