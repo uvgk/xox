@@ -151,7 +151,7 @@ class ProxyManager:
         return random.choice(self.valid_proxies)
 
 proxy_engine = ProxyManager()
-proxy_engine.validate_all()
+# proxy_engine.validate_all() removed to prevent startup timeout
 
 class ResponseAnalyzer:
     @classmethod
