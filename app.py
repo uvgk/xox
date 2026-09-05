@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Xox Sniper Mobile Web App — Name Generation & Production Edition
+Xox Sniper Mobile Web App — Cloud Proxy Edition
 """
 
 import os
@@ -111,7 +111,6 @@ class ProxyManager:
     def __init__(self):
         self.proxies: List[str] = []
         self.valid_proxies: List[str] = []
-        self.blacklisted_proxies: Dict[str, float] = {}
         self.load_proxies_file()
 
     def load_proxies_file(self):
@@ -193,7 +192,9 @@ async def check_username(session: ClientSession, config: PlatformConfig, usernam
 
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
-    return """
+    valid_count = len(proxy_engine.valid_proxies)
+    total_count = len(proxy_engine.proxies)
+    return f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -248,10 +249,18 @@ async def get_index():
                 <label class="text-xs text-gray-400 font-bold">Usernames (Comma Separated)</label>
                 <textarea id="usernames" rows="3" class="w-full bg-[#111111] border border-[#27272a] text-white p-2 rounded-lg mt-1 text-sm" placeholder="test1, test2, test3"></textarea>
             </div>
-            <div class="flex items-center space-x-2">
-                <input type="checkbox" id="use-proxy" checked class="w-4 h-4 accent-white">
-                <label class="text-xs text-gray-300">Enable Smart Proxy Rotation</label>
+
+            <!-- Proxy Toggle & Status -->
+            <div class="bg-[#111111] border border-[#27272a] p-3 rounded-lg space-y-2">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="use-proxy" checked class="w-4 h-4 accent-white">
+                        <label class="text-xs text-gray-300 font-bold">Enable Smart Proxy Rotation</label>
+                    </div>
+                </div>
+                <div class="text-[10px] text-emerald-400">Loaded Proxies: {total_count} | Active Valid: {valid_count}</div>
             </div>
+
             <button onclick="startScan()" id="scan-btn" class="w-full bg-white text-black font-bold py-2.5 rounded-lg text-sm hover:bg-gray-200">LAUNCH SNIPER</button>
         </div>
 
