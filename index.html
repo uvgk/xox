@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xox Mobile Sniper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#050505] text-[#f1f5f9] font-sans p-4">
+    <div class="max-w-md mx-auto space-y-4">
+        <h1 class="text-xl font-bold text-white">⊙ XOX MOBILE SNIPER</h1>
+        
+        <div class="grid grid-cols-5 gap-2 text-center">
+            <div class="bg-[#090909] border border-[#27272a] p-2 rounded-lg"><div class="text-[9px] text-gray-400">CHK</div><div id="m-chk" class="text-sm font-bold">0</div></div>
+            <div class="bg-[#090909] border border-[#27272a] p-2 rounded-lg"><div class="text-[9px] text-gray-400">HITS</div><div id="m-hits" class="text-sm font-bold text-emerald-400">0</div></div>
+            <div class="bg-[#090909] border border-[#27272a] p-2 rounded-lg"><div class="text-[9px] text-gray-400">TAKEN</div><div id="m-taken" class="text-sm font-bold text-red-400">0</div></div>
+            <div class="bg-[#090909] border border-[#27272a] p-2 rounded-lg"><div class="text-[9px] text-gray-400">FAIL</div><div id="m-fail" class="text-sm font-bold">0</div></div>
+            <div class="bg-[#090909] border border-[#27272a] p-2 rounded-lg"><div class="text-[9px] text-gray-400">RPS</div><div id="m-rps" class="text-sm font-bold text-amber-400">0</div></div>
+        </div>
+
+        <div class="bg-[#090909] border border-[#27272a] p-4 rounded-xl space-y-3">
+            <div>
+                <label class="text-xs text-gray-400 font-bold">Platform</label>
+                <select id="platform" class="w-full bg-[#111111] border border-[#27272a] text-white p-2 rounded-lg mt-1 text-sm">
+                    <option value="discord">Discord</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="tiktok">TikTok</option>
+                    <option value="twitter">Twitter</option>
+                    <option value="guns.lol">Guns.lol</option>
+                </select>
+            </div>
+
+            <div class="bg-[#111111] border border-[#27272a] p-3 rounded-lg space-y-2">
+                <label class="text-xs text-gray-400 font-bold">Name Generator</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <select id="gen-type" class="bg-[#050505] border border-[#27272a] text-white p-1.5 rounded text-xs">
+                        <option value="3l">3 Letters (3L)</option>
+                        <option value="4l">4 Letters (4L)</option>
+                        <option value="5l">5 Letters (5L)</option>
+                        <option value="3c">3 Chars (Mixed)</option>
+                        <option value="4c">4 Chars (Mixed)</option>
+                    </select>
+                    <input type="number" id="gen-qty" value="30" class="bg-[#050505] border border-[#27272a] text-white p-1.5 rounded text-xs" placeholder="Qty">
+                </div>
+                <button onclick="generateNames()" class="w-auto bg-[#27272a] text-white font-bold py-1.5 px-3 rounded text-xs hover:bg-[#3f3f46]">Generate & Insert Names</button>
+            </div>
+
+            <div>
+                <label class="text-xs text-gray-400 font-bold">Usernames (Comma Separated)</label>
+                <textarea id="usernames" rows="3" class="w-full bg-[#111111] border border-[#27272a] text-white p-2 rounded-lg mt-1 text-sm" placeholder="test1, test2, test3"></textarea>
+            </div>
+
+            <div class="bg-[#111111] border border-[#27272a] p-3 rounded-lg space-y-2">
+                <div class="flex items-center space-x-2">
+                    <input type="checkbox" id="use-proxy" checked class="w-4 h-4 accent-white">
+                    <label class="text-xs text-gray-300 font-bold">Enable Smart Proxy Rotation</label>
+                </div>
+            </div>
+
+            <button onclick="startScan()" id="scan-btn" class="w-full bg-white text-black font-bold py-2.5 rounded-lg text-sm hover:bg-gray-200">LAUNCH SNIPER</button>
+        </div>
+
+        <div class="bg-[#090909] border border-[#27272a] p-4 rounded-xl">
+            <h2 class="text-xs font-bold text-gray-400 mb-2">LIVE FEED</h2>
+            <div id="feed" class="space-y-2 max-h-64 overflow-y-auto pr-1"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws;
+        function generateNames() {
+            const type = document.getElementById('gen-type').value;
+            const qty = parseInt(document.getElementById('gen-qty').value) || 30;
+            let letters = "abcdefghijklmnopqrstuvwxyz";
+            let alphanumeric = "abcdefghijklmnopqrstuvwxyz0123456789";
+            let generated = new Set();
+            while(generated.size < qty) {
+                let val = "";
+                let k = type.startsWith('3') ? 3 : (type.startsWith('4') ? 4 : 5);
+                let chars = type.endsWith('c') ? alphanumeric : letters;
+                for(let i=0; i<k; i++) {
+                    val += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                generated.add(val);
+            }
+            document.getElementById('usernames').value = Array.from(generated).join(', ');
+        }
+
+        function startScan() {
+            const platform = document.getElementById('platform').value;
+            const usernames = document.getElementById('usernames').value;
+            const useProxy = document.getElementById('use-proxy').checked ? 1 : 0;
+            if (!usernames) return alert('Enter or generate usernames first!');
+            document.getElementById('feed').innerHTML = '';
+            
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            ws = new WebSocket(wsProtocol + window.location.host + '/ws');
+            
+            ws.onopen = () => {
+                ws.send(JSON.stringify({platform, usernames, use_proxy: useProxy}));
+                document.getElementById('scan-btn').innerText = "STOP";
+                document.getElementById('scan-btn').className = "w-full bg-red-600 text-white font-bold py-2.5 rounded-lg text-sm";
+            };
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'stats') {
+                    document.getElementById('m-chk').innerText = data.checked;
+                    document.getElementById('m-hits').innerText = data.hits;
+                    document.getElementById('m-taken').innerText = data.taken;
+                    document.getElementById('m-fail').innerText = data.failed;
+                    document.getElementById('m-rps').innerText = data.rps;
+                } else if (data.type === 'result') {
+                    const feed = document.getElementById('feed');
+                    const color = data.status === 'Available' ? 'text-emerald-400' : 'text-red-400';
+                    feed.innerHTML += `<div class="bg-[#111111] border border-[#27272a] p-2.5 rounded-lg flex justify-between items-center text-xs">
+                        <span class="font-bold text-white">${data.username}</span>
+                        <span class="${color} font-bold">${data.status}</span>
+                    </div>`;
+                    feed.scrollTop = feed.scrollHeight;
+                } else if (data.type === 'done') {
+                    document.getElementById('scan-btn').innerText = "LAUNCH SNIPER";
+                    document.getElementById('scan-btn').className = "w-full bg-white text-black font-bold py-2.5 rounded-lg text-sm";
+                }
+            };
+        }
+    </script>
+</body>
+</html>
